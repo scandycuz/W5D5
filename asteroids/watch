@@ -1,0 +1,694 @@
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
+
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
+
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+
+
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(1);
+	module.exports = __webpack_require__(9);
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const Asteroid = __webpack_require__(2);
+	const Bullet = __webpack_require__(5);
+	const GameView = __webpack_require__(6);
+	const Game = __webpack_require__(7);
+	const Ship = __webpack_require__(8);
+	const Util = __webpack_require__(4);
+	const MovingObject = __webpack_require__(3);
+
+	document.addEventListener( "DOMContentLoaded", () => {
+	  let canvasEl = document.getElementById("game-canvas");
+	  const ctx = canvasEl.getContext("2d");
+	  const game = new Game({
+	    dimX: 900,
+	    dimY: 500,
+	    numAsteroids: 6,
+	    background: "black"
+	  });
+	  window.game = game;
+
+	  canvasEl.width = game.DIM_X;
+	  canvasEl.height = game.DIM_Y;
+	  canvasEl.style.backgroundColor = game.BACKGROUND;
+	  new GameView(game, ctx).start();
+	});
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const MovingObject = __webpack_require__(3);
+	const Util = __webpack_require__(4);
+
+	const DEFAULTS = {
+	  COLOR: "black",
+	  OUTLINE: "white",
+	  RADIUS: 50,
+	  SPEED: 2
+	}
+
+	function Asteroid(options) {
+	  options.color = DEFAULTS.COLOR;
+	  options.outline = DEFAULTS.OUTLINE;
+	  options.pos = options.pos;
+	  options.vel = options.vel || this.randomVec(DEFAULTS.SPEED);
+	  options.radius = ((Math.random() + 0.2) * 50);
+
+	  MovingObject.call(this, options);
+	}
+
+	Util.inherits(Asteroid, MovingObject);
+
+	Asteroid.prototype.randomVec = function(length) {
+	  return [
+	    ((Math.random() * 2) - 1) * length * 1.1,
+	    ((Math.random() * 2) - 1) * length * 1.1
+	  ];
+	}
+
+	// window.asteroid = new Asteroid({ pos: [30, 30] })
+
+	module.exports = Asteroid;
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const Util = __webpack_require__(4);
+
+	function MovingObject (options) {
+	  this.game = options.game;
+	  this.pos = options.pos;
+	  this.vel = options.vel;
+	  this.outline = options.outline;
+	  this.radius = options.radius;
+	  this.color = options.color;
+	}
+
+	MovingObject.prototype.draw = function (ctx) {
+	  ctx.fillStyle = this.color;
+
+	  ctx.beginPath();
+	  ctx.arc(
+	    this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI, true
+	  );
+	  ctx.lineWidth = 2.5;
+	  ctx.strokeStyle = this.outline;
+
+	  ctx.stroke();
+	  ctx.fill();
+	}
+
+	MovingObject.prototype.move = function() {
+	  let wrapped = game.wrap(this.pos);
+	  if (wrapped === "xWrapped") {
+	    this.vel[0] = this.vel[0] * -1;
+	  }
+	  else if (wrapped === "yWrapped") {
+	    this.vel[1] = this.vel[1] * -1;
+	  }
+	  this.pos[0] += this.vel[0];
+	  this.pos[1] += this.vel[1];
+	}
+
+	MovingObject.prototype.isCollidedWith = function(otherObject) {
+	  let dist = Util.dist(this.pos, otherObject.pos);
+	  return dist < this.radius + otherObject.radius;
+	}
+
+	module.exports = MovingObject;
+
+
+
+
+
+
+
+
+
+
+
+	//
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	const Util = {
+	  dist (pos1, pos2) {
+	    return Math.sqrt(
+	      Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
+	    );
+	  },
+
+	  inherits (childClass, parentClass) {
+	    function Surrogate() {}
+	    Surrogate.prototype = parentClass.prototype;
+	    childClass.prototype = new Surrogate();
+	    childClass.prototype.constructor = childClass;
+	  }
+	}
+
+	// Distance between two points:
+	// Dist([x_1, y_1], [x_2, y_2]) = sqrt((x_1 - x_2) ** 2 + (y_1 - y_2) ** 2)
+
+	// Magnitude of vector:
+	// Norm([x_1, y_1]) = Dist([0, 0], [x_1, y_1])
+
+	module.exports = Util;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const MovingObject = __webpack_require__(3);
+
+	const Bullet = function() {}
+
+	module.exports = Bullet;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const Game = __webpack_require__(7);
+
+	function GameView (game, ctx) {
+	  this.ctx = ctx;
+	  this.game = game;
+	}
+
+	GameView.prototype.start = function() {
+	  setInterval( () => {
+	    this.game.drawObjects(this.ctx);
+	    this.game.step();
+	  }, 20);
+	}
+
+	module.exports = GameView;
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const Asteroid = __webpack_require__(2);
+	const Util = __webpack_require__(4);
+
+	function Game (options) {
+	  this.DIM_X = options["dimX"];
+	  this.DIM_Y = options["dimY"];
+	  this.NUM_ASTEROIDS = options["numAsteroids"];
+	  this.BACKGROUND = options["background"];
+	  this.asteroids = [];
+
+	  for (i = 0; i < this.NUM_ASTEROIDS; i ++) {
+	    this.addAsteroid(this);
+	  }
+	}
+
+	Game.prototype.randomPosition = () => {
+	  return [
+	    (Math.random() * this.DIM_X),
+	    Math.random() * this.DIM_Y
+	  ]
+	}
+
+	Game.prototype.addAsteroid = (gameInst, pos) => {
+	  if (pos == null) {
+	    this.pos = gameInst.randomPosition();
+	    console.log(this.pos);
+	  }
+	  else {
+	    this.xPos = pos[0];
+	    this.yPos = pos[1];
+	  }
+	  this.pos = [this.xPos, this.yPos];
+	  gameInst.asteroids.push(new Asteroid({game: gameInst, pos: this.pos}));
+	}
+
+	Game.prototype.drawObjects = function(ctx) {
+	  ctx.clearRect(0, 0, this.DIM_X, this.DIM_Y);
+	  this.asteroids.forEach((asteroid) => {
+	    asteroid.draw(ctx);
+	  });
+	}
+
+	Game.prototype.moveObjects = function () {
+	  this.asteroids.forEach((asteroid) => {
+	    asteroid.move();
+	  });
+	}
+
+	Game.prototype.wrap = function(pos) {
+	  let xDim = pos[0]
+	  let yDim = pos[1]
+	  if (xDim < -100 || xDim > this.DIM_X + 100) {
+	    return "xWrapped";
+	  }
+	  if (yDim < -100 || yDim > this.DIM_Y + 100) {
+	    return "yWrapped";
+	  }
+	}
+
+	Game.prototype.checkCollisions = function () {
+	  for (j = 0; j < this.asteroids.length; j++) {
+	    for (k = j + 1; k < this.asteroids.length; k++) {
+	      let obj1 = this.asteroids[j];
+	      let obj2 = this.asteroids[k];
+	      if (obj1.isCollidedWith(obj2)) {
+	        this.remove(obj1);
+	        this.remove(obj2);
+	        return;
+	      }
+	    }
+	  }
+	}
+
+	Game.prototype.step = function() {
+	  this.moveObjects();
+	  this.checkCollisions();
+	}
+
+	Game.prototype.remove = function(asteroid) {
+	  let asteroidIdx = this.asteroids.indexOf(asteroid);
+	  this.asteroids.splice(asteroidIdx, 1)
+	}
+
+	module.exports = Game;
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	const MovingObject = __webpack_require__(3);
+	const Util = __webpack_require__(4);
+
+	const DEFAULTS = {
+	  COLOR: "black",
+	  OUTLINE: "white",
+	  RADIUS: 50
+	}
+
+	const Ship = function() {}
+
+	module.exports = Ship;
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	/******/ (function(modules) { // webpackBootstrap
+	/******/ 	// The module cache
+	/******/ 	var installedModules = {};
+
+	/******/ 	// The require function
+	/******/ 	function __webpack_require__(moduleId) {
+
+	/******/ 		// Check if module is in cache
+	/******/ 		if(installedModules[moduleId])
+	/******/ 			return installedModules[moduleId].exports;
+
+	/******/ 		// Create a new module (and put it into the cache)
+	/******/ 		var module = installedModules[moduleId] = {
+	/******/ 			exports: {},
+	/******/ 			id: moduleId,
+	/******/ 			loaded: false
+	/******/ 		};
+
+	/******/ 		// Execute the module function
+	/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+
+	/******/ 		// Flag the module as loaded
+	/******/ 		module.loaded = true;
+
+	/******/ 		// Return the exports of the module
+	/******/ 		return module.exports;
+	/******/ 	}
+
+
+	/******/ 	// expose the modules object (__webpack_modules__)
+	/******/ 	__webpack_require__.m = modules;
+
+	/******/ 	// expose the module cache
+	/******/ 	__webpack_require__.c = installedModules;
+
+	/******/ 	// __webpack_public_path__
+	/******/ 	__webpack_require__.p = "";
+
+	/******/ 	// Load entry module and return exports
+	/******/ 	return __webpack_require__(0);
+	/******/ })
+	/************************************************************************/
+	/******/ ([
+	/* 0 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const Asteroid = __webpack_require__(1);
+		const Bullet = __webpack_require__(4);
+		const GameView = __webpack_require__(5);
+		const Game = __webpack_require__(6);
+		const Ship = __webpack_require__(7);
+		const Util = __webpack_require__(3);
+		const MovingObject = __webpack_require__(2);
+
+		document.addEventListener( "DOMContentLoaded", () => {
+		  let canvasEl = document.getElementById("game-canvas");
+		  const ctx = canvasEl.getContext("2d");
+		  const game = new Game({
+		    dimX: 900,
+		    dimY: 500,
+		    numAsteroids: 6,
+		    background: "black"
+		  });
+		  window.game = game;
+
+		  canvasEl.width = game.DIM_X;
+		  canvasEl.height = game.DIM_Y;
+		  canvasEl.style.backgroundColor = game.BACKGROUND;
+		  new GameView(game, ctx).start();
+		});
+
+
+	/***/ },
+	/* 1 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const MovingObject = __webpack_require__(2);
+		const Util = __webpack_require__(3);
+
+		const DEFAULTS = {
+		  COLOR: "black",
+		  OUTLINE: "white",
+		  RADIUS: 50,
+		  SPEED: 2
+		}
+
+		function Asteroid(options) {
+		  options.color = DEFAULTS.COLOR;
+		  options.outline = DEFAULTS.OUTLINE;
+		  options.pos = options.pos;
+		  options.vel = options.vel || this.randomVec(DEFAULTS.SPEED);
+		  options.radius = ((Math.random() + 0.2) * 50);
+
+		  MovingObject.call(this, options);
+		}
+
+		Util.inherits(Asteroid, MovingObject);
+
+		Asteroid.prototype.randomVec = function(length) {
+		  return [
+		    ((Math.random() * 2) - 1) * length * 1.1,
+		    ((Math.random() * 2) - 1) * length * 1.1
+		  ];
+		}
+
+		// window.asteroid = new Asteroid({ pos: [30, 30] })
+
+		module.exports = Asteroid;
+
+
+	/***/ },
+	/* 2 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const Util = __webpack_require__(3);
+
+		function MovingObject (options) {
+		  this.game = options.game;
+		  this.pos = options.pos;
+		  this.vel = options.vel;
+		  this.outline = options.outline;
+		  this.radius = options.radius;
+		  this.color = options.color;
+		}
+
+		MovingObject.prototype.draw = function (ctx) {
+		  ctx.fillStyle = this.color;
+
+		  ctx.beginPath();
+		  ctx.arc(
+		    this.pos[0], this.pos[1], this.radius, 0, 2 * Math.PI, true
+		  );
+		  ctx.lineWidth = 2.5;
+		  ctx.strokeStyle = this.outline;
+
+		  ctx.stroke();
+		  ctx.fill();
+		}
+
+		MovingObject.prototype.move = function() {
+		  let wrapped = game.wrap(this.pos);
+		  if (wrapped === "xWrapped") {
+		    this.vel[0] = this.vel[0] * -1;
+		  }
+		  else if (wrapped === "yWrapped") {
+		    this.vel[1] = this.vel[1] * -1;
+		  }
+		  this.pos[0] += this.vel[0];
+		  this.pos[1] += this.vel[1];
+		}
+
+		MovingObject.prototype.isCollidedWith = function(otherObject) {
+		  let dist = Util.dist(this.pos, otherObject.pos);
+		  return dist < this.radius + otherObject.radius;
+		}
+
+		module.exports = MovingObject;
+
+
+
+
+
+
+
+
+
+
+
+		//
+
+
+	/***/ },
+	/* 3 */
+	/***/ function(module, exports) {
+
+		const Util = {
+		  dist (pos1, pos2) {
+		    return Math.sqrt(
+		      Math.pow(pos1[0] - pos2[0], 2) + Math.pow(pos1[1] - pos2[1], 2)
+		    );
+		  },
+
+		  inherits (childClass, parentClass) {
+		    function Surrogate() {}
+		    Surrogate.prototype = parentClass.prototype;
+		    childClass.prototype = new Surrogate();
+		    childClass.prototype.constructor = childClass;
+		  }
+		}
+
+		// Distance between two points:
+		// Dist([x_1, y_1], [x_2, y_2]) = sqrt((x_1 - x_2) ** 2 + (y_1 - y_2) ** 2)
+
+		// Magnitude of vector:
+		// Norm([x_1, y_1]) = Dist([0, 0], [x_1, y_1])
+
+		module.exports = Util;
+
+
+	/***/ },
+	/* 4 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const MovingObject = __webpack_require__(2);
+
+		const Bullet = function() {}
+
+		module.exports = Bullet;
+
+
+	/***/ },
+	/* 5 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const Game = __webpack_require__(6);
+
+		function GameView (game, ctx) {
+		  this.ctx = ctx;
+		  this.game = game;
+		}
+
+		GameView.prototype.start = function() {
+		  setInterval( () => {
+		    this.game.drawObjects(this.ctx);
+		    this.game.step();
+		  }, 20);
+		}
+
+		module.exports = GameView;
+
+
+	/***/ },
+	/* 6 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const Asteroid = __webpack_require__(1);
+		const Util = __webpack_require__(3);
+
+		function Game (options) {
+		  this.DIM_X = options["dimX"];
+		  this.DIM_Y = options["dimY"];
+		  this.NUM_ASTEROIDS = options["numAsteroids"];
+		  this.BACKGROUND = options["background"];
+		  this.asteroids = [];
+
+		  for (i = 0; i < this.NUM_ASTEROIDS; i ++) {
+		    this.addAsteroid(this);
+		  }
+		}
+
+		Game.prototype.randomPosition = () => {
+		  // return [
+		  //   (Math.random() * this.DIM_X),
+		  //   Math.random() * this.DIM_Y
+		  // ]
+		}
+
+		Game.prototype.addAsteroid = (gameInst, pos) => {
+		  if (pos == null) {
+		    this.pos = gameInst.randomPosition();
+		  }
+		  else {
+		    this.xPos = pos[0];
+		    this.yPos = pos[1];
+		  }
+		  this.pos = [this.xPos, this.yPos];
+		  gameInst.asteroids.push(new Asteroid({game: gameInst, pos: this.pos}));
+		}
+
+		Game.prototype.drawObjects = function(ctx) {
+		  ctx.clearRect(0, 0, this.DIM_X, this.DIM_Y);
+		  this.asteroids.forEach((asteroid) => {
+		    asteroid.draw(ctx);
+		  });
+		}
+
+		Game.prototype.moveObjects = function () {
+		  this.asteroids.forEach((asteroid) => {
+		    asteroid.move();
+		  });
+		}
+
+		Game.prototype.wrap = function(pos) {
+		  let xDim = pos[0]
+		  let yDim = pos[1]
+		  if (xDim < -100 || xDim > this.DIM_X + 100) {
+		    return "xWrapped";
+		  }
+		  if (yDim < -100 || yDim > this.DIM_Y + 100) {
+		    return "yWrapped";
+		  }
+		}
+
+		Game.prototype.checkCollisions = function () {
+		  for (j = 0; j < this.asteroids.length; j++) {
+		    for (k = j + 1; k < this.asteroids.length; k++) {
+		      let obj1 = this.asteroids[j];
+		      let obj2 = this.asteroids[k];
+		      if (obj1.isCollidedWith(obj2)) {
+		        this.remove(obj1);
+		        this.remove(obj2);
+		        return;
+		      }
+		    }
+		  }
+		}
+
+		Game.prototype.step = function() {
+		  this.moveObjects();
+		  this.checkCollisions();
+		}
+
+		Game.prototype.remove = function(asteroid) {
+		  let asteroidIdx = this.asteroids.indexOf(asteroid);
+		  this.asteroids.splice(asteroidIdx, 1)
+		}
+
+		module.exports = Game;
+
+
+	/***/ },
+	/* 7 */
+	/***/ function(module, exports, __webpack_require__) {
+
+		const MovingObject = __webpack_require__(2);
+		const Util = __webpack_require__(3);
+
+		const DEFAULTS = {
+		  COLOR: "black",
+		  OUTLINE: "white",
+		  RADIUS: 50
+		}
+
+		const Ship = function() {}
+
+		module.exports = Ship;
+
+
+	/***/ }
+	/******/ ]);
+
+/***/ }
+/******/ ]);
